@@ -82,13 +82,60 @@ PY
 IMAGES_MIMIC_PATH = "/data2/local_datasets/ameer_data/mimic-cxr-jpg/2.0.0/files"
 
 DICT_CSV_MIMIC_PATH = {
-    "train": "DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_train.csv",
-    "validation": "DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_val.csv",
-    "test": "DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_test.csv",
+    "train": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_train.csv",
+    "validation": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_val.csv",
+    "test": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_test.csv",
 }
 
-VOCAB_PATH = "DATA/medical_diff_vqa_processed/vocab_diff.tgt"
+VOCAB_PATH = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/vocab_diff.tgt"
 
-PATH_IDS_NO_RG_TRAIN = "DATA/no_rg/TRAIN_SAMPLES_NO_rg.txt"
-PATH_IDS_NO_RG_TEST = "DATA/no_rg/TEST_SAMPLES_NO_rg.txt"
+PATH_IDS_NO_RG_TRAIN = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/no_rg/TRAIN_SAMPLES_NO_rg.txt"
+PATH_IDS_NO_RG_TEST = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/no_rg/TEST_SAMPLES_NO_rg.txt"
 ```
+
+---
+
+### 📌 Step 6. Stage2 프로젝트 루트로 이동
+
+```bash
+cd Vision_Encoder_Decoder_MDiffVQA
+```
+
+---
+
+### 📌 Step 7. CSV 경로가 제대로 읽히는지 확인 (paths.py 체크)
+
+```bash
+python - << 'PY'
+import pandas as pd
+from paths import DICT_CSV_MIMIC_PATH, IMAGES_MIMIC_PATH
+
+print("IMAGES_MIMIC_PATH =", IMAGES_MIMIC_PATH)
+print("DICT_CSV_MIMIC_PATH =", DICT_CSV_MIMIC_PATH)
+
+for split, path in DICT_CSV_MIMIC_PATH.items():
+    df = pd.read_csv(path)
+    print(f"[{split}] rows={len(df)} cols={df.columns.tolist()}")
+    print(df.head(2)[["study_id","subject_id","ref_id","question_type","question","answer","split"]])
+PY
+```
+
+---
+
+### 📌 Step 8. dataset 클래스 import 확인 (mimic_Dataset)
+
+```bash
+python - << 'PY'
+from mydatasets.mimic_dataset import mimic_Dataset
+print("dataset class:", mimic_Dataset)
+PY
+```
+
+---
+
+### 📌 Step 9. 가장 안전한 “sanity run” 실행 (가중치 로드 없이)
+
+```bash
+python train/mytrain_nll.py --help | head -n 120
+```
+
