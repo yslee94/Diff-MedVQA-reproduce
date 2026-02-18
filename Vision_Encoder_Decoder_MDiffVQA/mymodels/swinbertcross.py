@@ -36,7 +36,8 @@ class SwinBERTFinetuned(nn.Module):
         super().__init__()
         
         self.processor = AutoFeatureExtractor.from_pretrained(SWINB_IMAGENET22K_WEIGHTS)
-        self.encoder = SwinModel.from_pretrained(SWINB_IMAGENET22K_WEIGHTS_FINETUNE)
+        # self.encoder = SwinModel.from_pretrained(SWINB_IMAGENET22K_WEIGHTS_FINETUNE)
+        self.encoder = SwinModel.from_pretrained(SWINB_IMAGENET22K_WEIGHTS)
 
         # Decoder
         self.tokenizer = BertTokenizer(
@@ -46,7 +47,15 @@ class SwinBERTFinetuned(nn.Module):
             max_length=64,
             eos_token="[EOS]",
         )
-        
+        # ensure special tokens are set
+        self.tokenizer.add_special_tokens({
+            "pad_token": "[PAD]",
+            "cls_token": "[CLS]",
+            "sep_token": "[SEP]",
+            "bos_token": "[BOS]",
+            "eos_token": "[EOS]",
+        })
+
         dec_config = BertGenerationConfig(**DICT_DECODER_CONFIG) # DICT_DECODER_CONFIG
         self.decoder = BertGenerationDecoder(dec_config)
 
