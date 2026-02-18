@@ -1,15 +1,51 @@
-### 📌 Step 1. 폴더 생성
+# Diff-MedVQA Stage 2 Reproduction Guide
+
+## 0. Environment
 
 ```bash
+conda create -n medvqa_env python=3.9
+conda activate medvqa_env
+
+pip install torch torchvision
+pip install transformers
+pip install albumentations
+pip install opencv-python-headless==4.7.0.72
+pip install einops tqdm pandas pillow
+```
+
+---
+
+## 1. Dataset Assumptions
+
+### MIMIC-CXR-JPG
+
+```
+/data2/local_datasets/ameer_data/mimic-cxr-jpg/2.0.0/files
+```
+
+### Medical-Diff-VQA source CSV
+
+```
+/data2/local_datasets/medical_data/medical_diff_vqa/mimic_pair_questions.csv
+```
+
+---
+
+## 2. Create Local Working Folders
+
+```bash
+cd /data/yeseul/projects/diff-VQA/Diff-MedVQA
+
 mkdir -p DATA/medical_diff_vqa_processed
 mkdir -p DATA/no_rg
+
 touch DATA/no_rg/TRAIN_SAMPLES_NO_rg.txt
 touch DATA/no_rg/TEST_SAMPLES_NO_rg.txt
 ```
 
 ---
 
-### 📌 Step 2. train/val/test CSV 생성
+## 3. Generate train / val / test CSV
 
 ```bash
 python << 'PY'
@@ -28,9 +64,7 @@ print("Saved train/val/test CSV files.")
 PY
 ```
 
----
-
-### 📌 Step 3. validation split 통일
+Normalize validation split:
 
 ```bash
 python << 'PY'
@@ -45,12 +79,13 @@ PY
 
 ---
 
-### 📌 Step 4. vocab 생성
+## 4. Generate Vocabulary (with required special tokens)
 
 ```bash
 python << 'PY'
 import pandas as pd, re
 from collections import Counter
+from pathlib import Path
 
 root="DATA/medical_diff_vqa_processed"
 train_path=f"{root}/medical_vqa_pair_onlydiffquestions_train.csv"
@@ -66,82 +101,124 @@ for col in ["question","answer"]:
     for text in df[col].astype(str):
         counter.update(tokenize(text))
 
-with open(f"{root}/vocab_diff.tgt","w") as f:
-    for w,_ in counter.most_common():
-        f.write(w+"\n")
+vocab_path = Path(f"{root}/vocab_diff.tgt")
+vocab_path.write_text("\n".join([w for w,_ in counter.most_common()]) + "\n")
 
-print("Vocab generated.")
+# prepend required special tokens
+tokens = [t.strip() for t in vocab_path.read_text().splitlines() if t.strip()]
+special = ["[PAD]", "[UNK]", "[BOS]", "[EOS]", "[SEP]", "[CLS]"]
+
+seen=set()
+new=[]
+for t in special + tokens:
+    if t not in seen:
+        new.append(t); seen.add(t)
+
+vocab_path.write_text("\n".join(new) + "\n")
+
+print("Vocab generated:", vocab_path)
 PY
 ```
 
 ---
 
-### 📌 Step 5. `Vision_Encoder_Decoder_MDiffVQA/paths.py` 수정
+## 5. Add `images` Column to CSV
 
-```python
-IMAGES_MIMIC_PATH = "/data2/local_datasets/ameer_data/mimic-cxr-jpg/2.0.0/files"
+The dataset requires an `images` column formatted as:
 
-DICT_CSV_MIMIC_PATH = {
-    "train": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_train.csv",
-    "validation": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_val.csv",
-    "test": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_test.csv",
+```
+<main_image_relpath>,<ref_image_relpath>
+```
+
+```bash
+python << 'PY'
+import os
+import pandas as pd
+
+META = "/data2/local_datasets/ameer_data/mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv.gz"
+CSV_DIR = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed"
+
+splits = {
+    "train": os.path.join(CSV_DIR, "medical_vqa_pair_onlydiffquestions_train.csv"),
+    "val":   os.path.join(CSV_DIR, "medical_vqa_pair_onlydiffquestions_val.csv"),
+    "test":  os.path.join(CSV_DIR, "medical_vqa_pair_onlydiffquestions_test.csv"),
 }
 
-VOCAB_PATH = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/vocab_diff.tgt"
+meta = pd.read_csv(META, usecols=["subject_id","study_id","dicom_id","ViewPosition"])
+meta["ViewPosition"] = meta["ViewPosition"].astype(str)
 
-PATH_IDS_NO_RG_TRAIN = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/no_rg/TRAIN_SAMPLES_NO_rg.txt"
-PATH_IDS_NO_RG_TEST = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/no_rg/TEST_SAMPLES_NO_rg.txt"
+frontal = meta[meta["ViewPosition"].isin(["PA","AP"])].copy()
+if len(frontal) == 0:
+    frontal = meta.copy()
+
+frontal = frontal.sort_values(["subject_id","study_id","dicom_id"])
+one = frontal.drop_duplicates(["subject_id","study_id"], keep="first")
+
+def relpath(subject_id: int, study_id: int, dicom_id: str) -> str:
+    sid = str(int(subject_id))
+    st = str(int(study_id))
+    pgrp = "p" + sid[:2]
+    return f"{pgrp}/p{sid}/s{st}/{dicom_id}.jpg"
+
+one["img_rel"] = one.apply(lambda r: relpath(r["subject_id"], r["study_id"], r["dicom_id"]), axis=1)
+mp = dict(zip(list(zip(one["subject_id"].astype(int), one["study_id"].astype(int))), one["img_rel"].tolist()))
+
+def add_images(df: pd.DataFrame) -> pd.DataFrame:
+    subj = df["subject_id"].astype(int)
+    main_st = df["study_id"].astype(int)
+    ref_st  = df["ref_id"].astype(int)
+
+    main_rel = [mp.get((s, st)) for s, st in zip(subj, main_st)]
+    ref_rel  = [mp.get((s, st)) for s, st in zip(subj, ref_st)]
+
+    df = df.copy()
+    df["main_img"] = main_rel
+    df["ref_img"] = ref_rel
+
+    df = df.dropna(subset=["main_img","ref_img"]).copy()
+    df["images"] = df["main_img"] + "," + df["ref_img"]
+    df = df.drop(columns=["main_img","ref_img"])
+
+    return df
+
+for split, path in splits.items():
+    df = pd.read_csv(path)
+    if "images" in df.columns:
+        df = df.drop(columns=["images"])
+    out = add_images(df)
+    out.to_csv(path, index=False)
+    print("saved", split)
+
+PY
 ```
 
 ---
 
-### 📌 Step 6. Stage2 프로젝트 루트로 이동
+## 6. Run Stage 2
 
 ```bash
 cd Vision_Encoder_Decoder_MDiffVQA
-```
-
----
-
-### 📌 Step 7. CSV 경로가 제대로 읽히는지 확인 (paths.py 체크)
-
-```bash
-python - << 'PY'
-import pandas as pd
-from paths import DICT_CSV_MIMIC_PATH, IMAGES_MIMIC_PATH
-
-print("IMAGES_MIMIC_PATH =", IMAGES_MIMIC_PATH)
-print("DICT_CSV_MIMIC_PATH =", DICT_CSV_MIMIC_PATH)
-
-for split, path in DICT_CSV_MIMIC_PATH.items():
-    df = pd.read_csv(path)
-    print(f"[{split}] rows={len(df)} cols={df.columns.tolist()}")
-    print(df.head(2)[["study_id","subject_id","ref_id","question_type","question","answer","split"]])
-PY
-```
-
----
-
-### 📌 Step 8. dataset 클래스 import 확인 (mimic_Dataset)
-
-```bash
-python - << 'PY'
-from mydatasets.mimic_dataset import mimic_Dataset
-print("dataset class:", mimic_Dataset)
-PY
-```
-
----
-
-### 📌 Step 9. 가장 안전한 “sanity run” 실행 (가중치 로드 없이)
-
-```bash
-python train/mytrain_nll.py --help | head -n 120
-```
-
-```bash
-cd /data/yeseul/projects/diff-VQA/Diff-MedVQA/Vision_Encoder_Decoder_MDiffVQA
 export PYTHONPATH=$(pwd):$PYTHONPATH
+```
 
-python train/mytrain_nll.py --exp_name SANITY_RUN --model_arch SwinBERTFinetuned --hnm False
+Sanity check:
+
+```bash
+python train/mytrain_nll.py --help | head -n 50
+```
+
+Start training:
+
+```bash
+python train/mytrain_nll.py \
+  --exp_name SANITY_RUN \
+  --model_arch SwinBERTFinetuned \
+  --hnm False
+```
+
+Training should start and display:
+
+```
+---- Start Training ----
+Train Epoch [0/29] Loss: ...
 ```
