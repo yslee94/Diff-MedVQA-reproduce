@@ -112,13 +112,24 @@ class mimic_Dataset(Dataset):
         answer = self.dataset_df.iloc[idx].answer
         raw_answer = self.text_preprocessing(answer)
 
-        question = self.tokenizer(raw_question,
-                                    padding=False,
-                                    truncation=True,
-                                    max_length=64,
-                                    return_tensors="pt",
-                                    add_special_tokens=False)["input_ids"][0]
-        
+        raw_question = "" if raw_question is None else str(raw_question)
+        raw_answer = "" if raw_answer is None else str(raw_answer)
+
+        enc_q = self.tokenizer(
+            raw_question,
+            padding=False,
+            truncation=True,
+            max_length=64,
+            add_special_tokens=False
+        )
+
+        ids = enc_q["input_ids"]
+        unk = self.tokenizer.unk_token_id
+        # None -> unk
+        ids = [unk if t is None else int(t) for t in ids]
+
+        question = torch.tensor(ids, dtype=torch.long)
+
         # Pad the question to 64 tokens
         question = torch.nn.functional.pad(question, (0, 64 - len(question) - 1), value=self.pad_token.item())
 
@@ -128,15 +139,20 @@ class mimic_Dataset(Dataset):
         question_mask = torch.ones_like(question)
         question_mask[question == self.pad_token] = 0
 
-        answer = self.tokenizer(
+        enc_a = self.tokenizer(
             raw_answer,
             padding=False,
             truncation=True,
             max_length=64,
-            return_tensors="pt",
-            add_special_tokens=False)["input_ids"][0]
-        
-        
+            add_special_tokens=False
+        )
+
+        ids = enc_a["input_ids"]
+        unk = self.tokenizer.unk_token_id
+        ids = [unk if t is None else int(t) for t in ids]
+
+        answer = torch.tensor(ids, dtype=torch.long)
+
         # Pad the answer to 64 tokens   
         answer = torch.nn.functional.pad(answer, (0, 64 - len(answer) - 1), value=self.pad_token.item())
         # Add special tokens
