@@ -59,6 +59,13 @@ class SwinBERTFinetuned(nn.Module):
         dec_config = BertGenerationConfig(**DICT_DECODER_CONFIG) # DICT_DECODER_CONFIG
         self.decoder = BertGenerationDecoder(dec_config)
 
+        self.decoder.resize_token_embeddings(len(self.tokenizer))
+        self.decoder.config.vocab_size = len(self.tokenizer)
+
+        self.decoder.config.pad_token_id = self.tokenizer.pad_token_id
+        self.decoder.config.bos_token_id = self.tokenizer.bos_token_id
+        self.decoder.config.eos_token_id = self.tokenizer.eos_token_id
+
         self.pos_encoding = nn.Parameter(torch.zeros(2, self.decoder.config.hidden_size))
 
         torch.nn.init.normal_(self.pos_encoding, mean=0.0, std=1.0 / self.decoder.config.hidden_size**0.5)
