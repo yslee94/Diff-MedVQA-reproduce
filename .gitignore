@@ -1,7 +1,198 @@
-# Ignore PyTorch model files
+############################################################
+# 🔥 Large Data / Datasets (절대 올리지 말 것)
+############################################################
+
+data/
+datasets/
+dataset/
+mimic*
+*.tsv
+*.jsonl
+*.h5
+*.hdf5
+*.npz
+*.npy
+*.parquet
+*.pkl
+*.pickle
 *.pt
+*.pth
+*.ckpt
+*.bin
 
-# Ignore SafeTensors model files
-*.safetensors
+# Allow small config json if needed
+!config*.json
 
-*.vscode
+############################################################
+# 🔥 generated datasets / artifacts
+############################################################
+
+DATA/medical_diff_vqa_processed/
+DATA/**/vocab*.tgt
+
+############################################################
+# 🔥 Model Checkpoints / Training Outputs
+############################################################
+
+checkpoints/
+ckpt/
+models/
+saved_models/
+outputs/
+runs/
+logs/
+wandb/
+tensorboard/
+tb_logs/
+*.event*
+*.out
+*.log
+
+############################################################
+# 🔥 PyTorch / TensorFlow
+############################################################
+
+*.pt
+*.pth
+*.ckpt
+*.pb
+*.pbtxt
+*.tflite
+*.onnx
+
+############################################################
+# 🔥 Python
+############################################################
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+develop-eggs/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Virtual env
+env/
+venv/
+.venv/
+ENV/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+############################################################
+# 🔥 VSCode / PyCharm / IDE
+############################################################
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+
+############################################################
+# 🔥 OS Files (Windows / Ubuntu / Mac)
+############################################################
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.nfs*
+
+############################################################
+# 🔥 SSH / Server / NAS
+############################################################
+
+*.pem
+*.key
+*.pub
+id_rsa
+id_rsa.pub
+known_hosts
+
+############################################################
+# 🔥 Conda / Pip
+############################################################
+
+conda-meta/
+*.conda
+*.whl
+
+############################################################
+# 🔥 Logs / Temporary
+############################################################
+
+*.log
+*.tmp
+tmp/
+temp/
+
+############################################################
+# 🔥 Misc
+############################################################
+
+.cache/
+.cache*
+pytest_cache/
+coverage/
+htmlcov/
+
+############################################################
+# 🔥 HuggingFace / transformers cache
+############################################################
+
+.huggingface/
+transformers_cache/
+
+############################################################
+# 🔥 Docker
+############################################################
+
+*.docker
+.dockerignore
+
+############################################################
+# 🔥 Git Large Files (optional)
+############################################################
+
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+############################################################
+# 🔥 Ignore large annotation outputs (if needed)
+############################################################
+
+annotation.json
+mimic-context*.json
+
+############################################################
+# 🔥 Keep important files
+############################################################
+
+!README.md
+!requirements.txt
+!environment.yml
+!*.py
+!*.md
