@@ -139,3 +139,9 @@ PY
 python train/mytrain_nll.py --help | head -n 120
 ```
 
+```bash
+cd /data/yeseul/projects/diff-VQA/Diff-MedVQA/Vision_Encoder_Decoder_MDiffVQA
+export PYTHONPATH=$(pwd):$PYTHONPATH
+
+python train/mytrain_nll.py --exp_name SANITY_RUN --model_arch SwinBERTFinetuned --hnm False
+```
