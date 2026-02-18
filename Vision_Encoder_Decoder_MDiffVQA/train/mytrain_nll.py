@@ -13,8 +13,8 @@ from torch.utils.data import DataLoader
 import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(os.path.abspath(os.getcwd()), os.pardir))) # "/home/user/RRG/rrg"
-sys.path.append('/home/ljmarten/RadiologyQA/')
-sys.path.append('/home/ljmarten/RadiologyQA/pycocoevalcap/')
+# sys.path.append('/home/ljmarten/RadiologyQA/')
+# sys.path.append('/home/ljmarten/RadiologyQA/pycocoevalcap/')
 
 from mymodels.swinbertcross import SwinBERTFinetuned
 
@@ -23,7 +23,8 @@ from train.train_utils import multiassign, Hard_Negative_Mining
 # from train.metrics import metrics_to_log
 from pycocoevalcap.metrics import Evaluator
 
-torch.set_float32_matmul_precision('medium')
+if hasattr(torch, "set_float32_matmul_precision"):
+    torch.set_float32_matmul_precision("medium")
 
 ####################################################################
 # Load Arguments
@@ -42,18 +43,22 @@ parser.add_argument('--train_set', type=str, default="train", help='Load weights
 # Parsea los argumentos
 args = parser.parse_args()
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Vision_Encoder_Decoder_MDiffVQA
+
 # Print de los valores de los argumentos
 print(20*'*')
 print('exp_name:', args.exp_name)
 print('model_arch:', args.model_arch)
 if args.load_weights != None:
     print("load_weights: ", args.load_weights)
-    args.load_weights = "/home/ljmarten/RadiologyQA/EXPERIMENTS/" + args.load_weights
+    # args.load_weights = "/home/ljmarten/RadiologyQA/EXPERIMENTS/" + args.load_weights
+    if args.load_weights is not None and len(str(args.load_weights)) > 0:
+        args.load_weights = os.path.join(PROJECT_ROOT, "EXPERIMENTS", args.load_weights)
 print('hnm:', args.hnm)
 print('train_set:', args.train_set)
 print(30*'*')
-
-EXP_DIR_PATH = "/home/ljmarten/RadiologyQA/EXPERIMENTS/" + args.exp_name
+# EXP_DIR_PATH = "/home/ljmarten/RadiologyQA/EXPERIMENTS/" + args.exp_name
+EXP_DIR_PATH = os.path.join(PROJECT_ROOT, "EXPERIMENTS", args.exp_name)
 if not os.path.exists(EXP_DIR_PATH):
     os.makedirs(EXP_DIR_PATH)
 
