@@ -1,4 +1,4 @@
-IMAGES_MIMIC_PATH = "/data2/local_datasets/ameer_data/mimic-cxr-jpg/2.0.0/files"
+IMAGES_MIMIC_PATH = "/data/yeseul/datasets/mimic-cxr-jpg/2.0.0/files"
 
 DICT_CSV_MIMIC_PATH = {
     "train": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_train.csv",
