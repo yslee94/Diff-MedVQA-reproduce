@@ -10,6 +10,8 @@ from transformers.models.bert_generation import BertGenerationConfig, BertGenera
 from transformers import AutoFeatureExtractor, SwinModel, BertTokenizer
 
 from paths import VOCAB_PATH, SWINB_IMAGENET22K_WEIGHTS, SWINB_IMAGENET22K_WEIGHTS_FINETUNE
+from paths import SWINB_FINETUNED_PTH
+
 from mymodels.beam_search import prepare_inputs_for_generation, _validate_model_kwargs
 
 DICT_DECODER_CONFIG = {
@@ -38,6 +40,11 @@ class SwinBERTFinetuned(nn.Module):
         self.processor = AutoFeatureExtractor.from_pretrained(SWINB_IMAGENET22K_WEIGHTS)
         # self.encoder = SwinModel.from_pretrained(SWINB_IMAGENET22K_WEIGHTS_FINETUNE)
         self.encoder = SwinModel.from_pretrained(SWINB_IMAGENET22K_WEIGHTS)
+
+        # --- load Stage1 finetuned encoder weights (.pth state_dict) ---
+        state = torch.load(SWINB_FINETUNED_PTH, map_location="cpu")
+        missing, unexpected = self.encoder.load_state_dict(state, strict=False)
+        print(f"[Stage1->Stage2] Loaded finetuned Swin from pth: missing={len(missing)} unexpected={len(unexpected)} path={SWINB_FINETUNED_PTH}")
 
         # Decoder
         self.tokenizer = BertTokenizer(
