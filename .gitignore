@@ -24,7 +24,7 @@ mimic*
 !config*.json
 
 ############################################################
-# 🔥 generated datasets / artifacts
+# 🔥 generated datasets / outputs / artifacts
 ############################################################
 
 DATA/medical_diff_vqa_processed/
@@ -39,6 +39,7 @@ ckpt/
 models/
 saved_models/
 outputs/
+OUTPUTS/
 runs/
 logs/
 wandb/
