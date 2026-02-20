@@ -1,4 +1,5 @@
-IMAGES_MIMIC_PATH = "/data/yeseul/datasets/mimic-cxr-jpg/2.0.0/files"
+# IMAGES_MIMIC_PATH = "/data/yeseul/datasets/mimic-cxr-jpg/2.0.0/files"
+IMAGES_MIMIC_PATH = "/data2/local_datasets/yeseul_data/mimic-cxr-jpg-resized/2.0.0/files"
 
 DICT_CSV_MIMIC_PATH = {
     "train": "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/medical_diff_vqa_processed/medical_vqa_pair_onlydiffquestions_train.csv",
@@ -13,3 +14,5 @@ PATH_IDS_NO_RG_TEST = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/no_rg/TES
 
 SWINB_IMAGENET22K_WEIGHTS = "microsoft/swin-base-patch4-window12-384-in22k"
 SWINB_IMAGENET22K_WEIGHTS_FINETUNE = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/swin_mimic/"
+
+SWINB_FINETUNED_PTH = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/OUTPUTS/stage1_swin_finetune/swin_encoder_finetuned.pth"

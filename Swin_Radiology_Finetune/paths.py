@@ -1,9 +1,9 @@
 
-IMAGES_MIMIC_PATH = "/home/DATA/mimic-cxr/2.0.0/files_jpg_512/files"
+IMAGES_MIMIC_PATH = "/data2/local_datasets/yeseul_data/mimic-cxr-jpg-resized/2.0.0/files"
 
-MIMIC_PATH_TRAIN = "/home/DATA/mimic-cxr/2.0.0/RRG/mimic-cxr/findings/train.metadata.csv"
-MIMIC_PATH_VAL = "/home/DATA/mimic-cxr/2.0.0/RRG/mimic-cxr/findings/validate.metadata.csv"
-MIMIC_PATH_TEST = "/home/DATA/mimic-cxr/2.0.0/RRG/mimic-cxr/findings/test.metadata.csv"
+MIMIC_PATH_TRAIN = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/stage1_mimic_chexpert/train_metadata.csv"
+MIMIC_PATH_VAL   = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/stage1_mimic_chexpert/val_metadata.csv"
+MIMIC_PATH_TEST  = "/data/yeseul/projects/diff-VQA/Diff-MedVQA/DATA/stage1_mimic_chexpert/test_metadata.csv"
 
 SWINB_IMAGENET22K_WEIGHTS = "microsoft/swin-base-patch4-window12-384-in22k"
 
