@@ -5,7 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.optim import AdamW
 from torchvision import transforms
-from transformers import AutoImageProcessor, SwinModel
+from transformers import AutoFeatureExtractor, SwinModel
 import pandas as pd
 import pathlib
 from PIL import Image
@@ -16,7 +16,8 @@ import multiprocessing
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from paths import DICT_MIMICALL_OBS_TO_INT, IMAGES_MIMIC_PATH, MIMIC_PATH_TEST, MIMIC_PATH_TRAIN, MIMIC_PATH_VAL, SWINB_IMAGENET22K_WEIGHTS, DICT_MIMIC_OBSKEY_TO_INT
 
-torch.set_float32_matmul_precision('medium')
+if hasattr(torch, "set_float32_matmul_precision"):
+    torch.set_float32_matmul_precision("medium")
 
 # Define the Lightning Module
 class SwinLightningModel(pl.LightningModule):
@@ -24,7 +25,7 @@ class SwinLightningModel(pl.LightningModule):
         super().__init__()
         self.swin = SwinModel.from_pretrained(swin_weights)
         self.swin.train()
-        self.processor = AutoImageProcessor.from_pretrained(swin_weights)
+        self.processor = AutoFeatureExtractor.from_pretrained(swin_weights)
         self.classifier = nn.Linear(self.swin.config.hidden_size, num_classes * 2)
         if use_weights:
             self.class_weights = torch.load("class_weights.pt",weights_only=True).to("cuda")
@@ -46,7 +47,7 @@ class SwinLightningModel(pl.LightningModule):
         outputs = self(pixel_values)
         loss = 0
         for i in range(14):
-            loss += F.cross_entropy(outputs[:, i, :], labels[:, i], weight=self.class_weights[i], label_smoothing=0.1)
+            loss += F.cross_entropy(outputs[:, i, :], labels[:, i], weight=self.class_weights[i])
         loss /= 14
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
@@ -56,7 +57,7 @@ class SwinLightningModel(pl.LightningModule):
         outputs = self(pixel_values)
         loss = 0
         for i in range(14):
-            loss += F.cross_entropy(outputs[:, i, :], labels[:, i], weight=self.class_weights[i], label_smoothing=0.1)
+            loss += F.cross_entropy(outputs[:, i, :], labels[:, i], weight=self.class_weights[i])
         loss /= 14
         preds = torch.argmax(outputs, dim=2)
         accuracy = (preds == labels).float().mean()
@@ -117,7 +118,8 @@ class MIMICDataset(Dataset):
         return img, labels
 
 # Training Parameters
-BATCH_SIZE = 24
+# BATCH_SIZE = 24
+BATCH_SIZE = 4
 num_workers = multiprocessing.cpu_count() - 1
 
 # Define Transforms
@@ -159,13 +161,24 @@ checkpoint_callback = ModelCheckpoint(monitor="val_loss", save_top_k=1, mode="mi
 lr_monitor = LearningRateMonitor(logging_interval="epoch")
 
 # Trainer
+# trainer = pl.Trainer(
+#     max_epochs=30,
+#     accelerator="gpu" if torch.cuda.is_available() else "cpu",
+#     callbacks=[checkpoint_callback, lr_monitor],
+#     log_every_n_steps=10,
+#     accumulate_grad_batches=3,
+# )
 trainer = pl.Trainer(
-    max_epochs=30,
+    default_root_dir="/data/yeseul/projects/diff-VQA/Diff-MedVQA/OUTPUTS/stage1_swin_finetune",
+    max_epochs=1,
+    limit_train_batches=10,
+    limit_val_batches=5,
+    log_every_n_steps=1,
     accelerator="gpu" if torch.cuda.is_available() else "cpu",
+    devices=1,
     callbacks=[checkpoint_callback, lr_monitor],
-    log_every_n_steps=10,
-    accumulate_grad_batches=3,
 )
+
 
 # Initialize and Train
 trainer.fit(model, train_loader, val_loader)
